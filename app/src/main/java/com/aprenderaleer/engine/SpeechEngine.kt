@@ -27,6 +27,20 @@ class SpeechEngine(context: Context) {
     private val contador = AtomicLong(0)
     private val callbacks = HashMap<String, () -> Unit>()
 
+    /**
+     * Número de "emisión". Cada vez que se manda hablar algo nuevo —o se
+     * calla— sube, y todo lo que estuviera sonando queda marcado como
+     * superado.
+     *
+     * Hace falta porque `speak(QUEUE_FLUSH)` y `stop()` cortan lo que sonaba
+     * pero AUN ASÍ disparan onDone/onError de esa emisión, ya en vuelo. Sin
+     * esta comprobación, el callback de la emisión cortada se ejecutaba
+     * igualmente: como algunos callbacks vuelven a hablar (la nota didáctica
+     * tras el guion, por ejemplo), lo cortado acababa hablando ENCIMA de lo
+     * nuevo y la voz se atropellaba a sí misma.
+     */
+    private val emision = AtomicLong(0)
+
     /** El motor ya se inicializó correctamente. */
     var listo by mutableStateOf(false)
         private set
@@ -55,27 +69,47 @@ class SpeechEngine(context: Context) {
 
     private val listener = object : UtteranceProgressListener() {
         override fun onStart(utteranceId: String?) {
-            main.post { hablando = true }
+            main.post { if (esVigente(utteranceId)) hablando = true }
         }
 
         override fun onDone(utteranceId: String?) {
-            main.post {
-                hablando = false
-                utteranceId?.let { id -> callbacks.remove(id)?.invoke() }
-            }
+            main.post { terminar(utteranceId) }
         }
 
         @Suppress("OVERRIDE_DEPRECATION")
         override fun onError(utteranceId: String?) {
-            main.post {
-                hablando = false
-                utteranceId?.let { id -> callbacks.remove(id)?.invoke() }
-            }
+            main.post { terminar(utteranceId) }
         }
 
         override fun onError(utteranceId: String?, errorCode: Int) {
             onError(utteranceId)
         }
+    }
+
+    /** Cierra una emisión, ignorando las que ya fueron superadas. */
+    private fun terminar(utteranceId: String?) {
+        if (!esVigente(utteranceId)) {
+            // Emisión cortada: su callback ya no vale, y su fin no puede
+            // apagar la boca del avatar si ya está sonando otra cosa.
+            utteranceId?.let { callbacks.remove(it) }
+            return
+        }
+        hablando = false
+        utteranceId?.let { id -> callbacks.remove(id)?.invoke() }
+    }
+
+    /** Abre una emisión nueva: lo anterior queda superado. */
+    private fun nuevaEmision(): Long {
+        callbacks.clear()
+        return emision.incrementAndGet()
+    }
+
+    private fun idDe(gen: Long): String = "g${gen}u${contador.incrementAndGet()}"
+
+    private fun esVigente(utteranceId: String?): Boolean {
+        val id = utteranceId ?: return false
+        if (!id.startsWith("g")) return false
+        return id.drop(1).substringBefore('u').toLongOrNull() == emision.get()
     }
 
     private fun aplicarIdioma() {
@@ -102,8 +136,9 @@ class SpeechEngine(context: Context) {
     fun decir(texto: String, lento: Boolean = false, alTerminar: (() -> Unit)? = null) {
         val motor = tts ?: return
         if (texto.isBlank()) { alTerminar?.invoke(); return }
+        val gen = nuevaEmision()
         motor.setSpeechRate(if (lento) VELOCIDAD_LENTA else VELOCIDAD_NORMAL)
-        val id = "u${contador.incrementAndGet()}"
+        val id = idDe(gen)
         alTerminar?.let { callbacks[id] = it }
         motor.speak(texto, TextToSpeech.QUEUE_FLUSH, Bundle(), id)
     }
@@ -121,11 +156,12 @@ class SpeechEngine(context: Context) {
         val motor = tts ?: return
         val limpias = partes.filter { it.isNotBlank() }
         if (limpias.isEmpty()) { alTerminar?.invoke(); return }
+        val gen = nuevaEmision()
         motor.setSpeechRate(if (lento) VELOCIDAD_LENTA else VELOCIDAD_NORMAL)
 
         limpias.forEachIndexed { i, parte ->
             val modo = if (i == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
-            val id = "u${contador.incrementAndGet()}"
+            val id = idDe(gen)
             if (i == limpias.lastIndex) alTerminar?.let { callbacks[id] = it }
             motor.speak(parte, modo, Bundle(), id)
             if (i != limpias.lastIndex) {
@@ -140,13 +176,15 @@ class SpeechEngine(context: Context) {
     }
 
     fun callar() {
+        // Subir la emisión ANTES de parar: lo que ya esté en vuelo llegará
+        // marcado como superado y no ejecutará su callback ni tocará estado.
+        nuevaEmision()
         tts?.stop()
         hablando = false
-        callbacks.clear()
     }
 
     fun liberar() {
-        callbacks.clear()
+        nuevaEmision()
         tts?.stop()
         tts?.shutdown()
         tts = null

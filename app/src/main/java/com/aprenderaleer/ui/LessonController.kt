@@ -120,7 +120,9 @@ class LessonController(
         val paso = pasoEnsenanza ?: return
         mood = AvatarMood.HABLANDO
         mensaje = "Mira bien la ${paso.nombreHablado}."
-        voz.decir(paso.guion(), lento = true) {
+        // Por partes y con pausa: el sonido va suelto y repetido, y de
+        // corrido se perdería en mitad de la frase.
+        voz.decirSecuencia(paso.partes(), pausaMs = 420, lento = true) {
             mood = AvatarMood.FELIZ
             // La nota didáctica va con la minúscula, que es donde se explica
             // la letra; repetirla en la mayúscula solo alarga la espera.
@@ -137,6 +139,12 @@ class LessonController(
     fun escucharPasoEnsenanza() {
         val paso = pasoEnsenanza ?: return
         voz.decir(paso.nombreHablado, lento = true)
+    }
+
+    /** El niño toca la ficha del sonido: corto, fuerte y repetido. */
+    fun escucharSonido() {
+        val letra = pasoEnsenanza?.letra ?: return
+        voz.decirSecuencia(letra.partesSonido(), pausaMs = 420, lento = true)
     }
 
     fun siguienteEnsenanza() {

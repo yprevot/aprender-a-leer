@@ -21,7 +21,13 @@ data class Letra(
     val nombreAlfabeto: String,
     /**
      * Texto que el TTS lee para imitar el SONIDO dentro de la palabra.
-     * Solo para consonantes continuas (se pueden alargar) y vocales.
+     *
+     * En vocales es la letra suelta ("a"), porque un TTS en español la lee
+     * como el fonema y sale corta y fuerte, que es como hay que presentarla.
+     * En consonantes continuas hay que repetir la grafía ("mmm"): una "m"
+     * suelta se lee como su NOMBRE, "eme", que es justo lo contrario de lo
+     * que este campo enseña.
+     *
      * null en oclusivas: el sonido se enseña con la familia silábica.
      */
     val sonidoSostenido: String?,
@@ -40,43 +46,65 @@ data class Letra(
     /** Guion completo (el de la minúscula, que es el que lleva la enseñanza). */
     fun guionEnsenanza(): String = guionEnsenanza(esMayuscula = false)
 
+    fun guionEnsenanza(esMayuscula: Boolean): String =
+        partesEnsenanza(esMayuscula).joinToString(" ")
+
     /**
-     * Guion que el avatar narra al presentar la letra en UNA caja.
+     * Guion que el avatar narra al presentar la letra en UNA caja, troceado
+     * para que se diga con pausas entre partes en vez de de corrido.
+     *
+     * El SONIDO va suelto en su propia parte y repetido, avisando antes de
+     * repetirlo: a los 5 años el fonema se escapa si viene enterrado en
+     * mitad de una frase larga, y el aviso es lo que hace que el niño esté
+     * escuchando en la segunda pasada.
      *
      * La minúscula carga toda la enseñanza (nombre, sonido, familia silábica,
      * ejemplo) porque es la forma que el niño ve casi siempre al leer. La
-     * mayúscula solo añade lo que la diferencia: es la misma letra, se llama
-     * igual y se usa al empezar frase y en los nombres.
+     * mayúscula solo añade lo que la diferencia.
      *
      * En ambos casos se nombra la letra con `nombreAlfabeto` y no con el
      * carácter suelto: un TTS lee "eme" de forma fiable, pero una "m" aislada
      * no, y el niño necesita oír bien lo que está mirando.
      */
-    fun guionEnsenanza(esMayuscula: Boolean): String {
-        val sb = StringBuilder()
+    fun partesEnsenanza(esMayuscula: Boolean): List<String> {
         if (esMayuscula) {
-            sb.append("Esta es la $nombreAlfabeto mayúscula. ")
-            sb.append("Es la misma letra que la $nombreAlfabeto minúscula, ")
-            sb.append("solo que se escribe más grande. ")
-            sb.append("La mayúscula se usa al empezar una frase y en los nombres. ")
-            sb.append("Mírala en las dos formas: la de imprenta y la de escribir a mano.")
-            return sb.toString()
+            return listOf(
+                "Esta es la $nombreAlfabeto mayúscula.",
+                "Es la misma letra que la $nombreAlfabeto minúscula, " +
+                    "solo que se escribe más grande.",
+                "La mayúscula se usa al empezar una frase y en los nombres.",
+                "Mírala en las dos formas: la de imprenta y la de escribir a mano."
+            )
         }
-        sb.append("Esta es la $nombreAlfabeto minúscula. ")
-        sb.append("En el alfabeto se llama $nombreAlfabeto. ")
-        if (esVocal) {
-            sb.append("Y dentro de una palabra también suena $nombreAlfabeto. ")
-        } else if (id == "h") {
-            sb.append("Pero dentro de una palabra no suena. Es muda. ")
-        } else {
-            val sonido = sonidoSostenido ?: silabas.joinToString(", ")
-            sb.append("Pero dentro de una palabra se llama $minuscula, y suena $sonido. ")
-            if (silabas.isNotEmpty()) {
-                sb.append("Se combina con las vocales así: ${silabas.joinToString(", ")}. ")
+        val partes = mutableListOf<String>()
+        partes += "Esta es la $nombreAlfabeto minúscula."
+        partes += "En el alfabeto se llama $nombreAlfabeto."
+        when {
+            id == "h" -> partes += "Pero dentro de una palabra no suena. Es muda."
+            sonidoSostenido != null -> {
+                partes += "Dentro de una palabra suena así."
+                partes += sonidoSostenido
+                partes += "Escucha otra vez."
+                partes += sonidoSostenido
             }
+            // Oclusivas: el fonema no se puede aislar sin añadirle una vocal,
+            // así que el sonido lo enseña la familia silábica de abajo.
+            else -> partes += "Su sonido se oye al juntarla con las vocales."
         }
-        sb.append("Por ejemplo: $palabraEjemplo.")
-        return sb.toString()
+        if (silabas.isNotEmpty()) {
+            partes += "Se combina con las vocales así."
+            partes += silabas
+        }
+        partes += "Por ejemplo: $palabraEjemplo."
+        return partes
+    }
+
+    /** El sonido suelto y repetido, para el botón que lo vuelve a poner. */
+    fun partesSonido(): List<String> = when {
+        id == "h" -> listOf("La hache es muda, no suena.")
+        sonidoSostenido != null ->
+            listOf(sonidoSostenido, "Otra vez.", sonidoSostenido)
+        else -> listOf("Suena al juntarla con las vocales.") + silabas
     }
 }
 
@@ -119,6 +147,9 @@ data class PasoEnsenanza(val letra: Letra, val esMayuscula: Boolean) {
     val nombreHablado: String get() = "${letra.nombreAlfabeto} $etiquetaCaja"
 
     fun guion(): String = letra.guionEnsenanza(esMayuscula)
+
+    /** El guion troceado, para narrarlo con pausas. */
+    fun partes(): List<String> = letra.partesEnsenanza(esMayuscula)
 }
 
 /** Una palabra objetivo, ya separada en sílabas. */

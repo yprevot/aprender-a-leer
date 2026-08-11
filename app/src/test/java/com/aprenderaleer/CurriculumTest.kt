@@ -75,7 +75,25 @@ class CurriculumTest {
         val guion = eme.guionEnsenanza()
         assertTrue(guion.contains("se llama eme"))
         assertTrue(guion.contains("mmm"))
-        assertTrue(guion.contains("ma, me, mi, mo, mu"))
+        eme.silabas.forEach { assertTrue("falta $it", guion.contains(it)) }
+    }
+
+    @Test
+    fun `el sonido se presenta suelto, repetido y avisando de la repeticion`() {
+        val partes = Curriculum.letra("m")!!.partesEnsenanza(esMayuscula = false)
+        // El fonema va en su propia parte, no enterrado en una frase: así se
+        // dice con pausa antes y después.
+        assertEquals(2, partes.count { it == "mmm" })
+        val primera = partes.indexOf("mmm")
+        assertTrue("no avisa de la repetición", partes[primera + 1].contains("otra vez"))
+        assertEquals("mmm", partes[primera + 2])
+    }
+
+    @Test
+    fun `las vocales suenan cortas, no alargadas`() {
+        Curriculum.vocales.forEach {
+            assertEquals("la ${it.id} se alarga", it.minuscula, it.sonidoSostenido)
+        }
     }
 
     @Test

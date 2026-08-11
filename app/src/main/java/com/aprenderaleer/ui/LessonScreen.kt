@@ -283,11 +283,7 @@ private fun BloqueEnsenanza(ctrl: LessonController, esGrande: Boolean) {
                     },
                     color = Verde,
                     modifier = Modifier.weight(1f)
-                ) {
-                    val s = if (letra.id == "h") "La hache es muda, no suena."
-                    else letra.sonidoSostenido ?: letra.silabas.joinToString(", ")
-                    ctrl.escucharOpcion(s)
-                }
+                ) { ctrl.escucharSonido() }
             }
         }
 
