@@ -452,7 +452,8 @@ private fun BloqueElegirOpcion(ctrl: LessonController, ej: Ejercicio, esGrande: 
                     estado = estado,
                     habilitada = ctrl.acierto != true && !ctrl.revelada,
                     onClick = { ctrl.responderToque(op.id) },
-                    tamanoTexto = if (esTexto) 30 else if (esGrande) 62 else 48
+                    tamanoTexto = if (esTexto) 30 else if (esGrande) 62 else 48,
+                    manuscrita = op.manuscrita
                 )
             }
         }

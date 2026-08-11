@@ -88,6 +88,27 @@ data class Letra(
  * que el niño se lo va a encontrar: de imprenta (libros y pantallas) y
  * manuscrito (su cuaderno).
  */
+/**
+ * Las cuatro presentaciones en las que el niño se encuentra la MISMA letra.
+ *
+ * Reconocerlas todas es un aprendizaje aparte, no un adorno: la "a" de
+ * imprenta y la "a" ligada no se parecen en nada, así que saber una no
+ * implica saber la otra. Por eso el ejercicio de identificar se repite una
+ * vez por presentación.
+ */
+enum class FormaLetra(
+    val esMayuscula: Boolean,
+    val esManuscrita: Boolean,
+    val etiqueta: String
+) {
+    MINUSCULA_IMPRENTA(false, false, "minúscula"),
+    MAYUSCULA_IMPRENTA(true, false, "mayúscula"),
+    MINUSCULA_MANUSCRITA(false, true, "minúscula a mano"),
+    MAYUSCULA_MANUSCRITA(true, true, "mayúscula a mano");
+
+    fun glifo(letra: Letra): String = if (esMayuscula) letra.mayuscula else letra.minuscula
+}
+
 data class PasoEnsenanza(val letra: Letra, val esMayuscula: Boolean) {
     /** Lo que se dibuja en grande: "a" o "A". */
     val glifo: String get() = if (esMayuscula) letra.mayuscula else letra.minuscula
@@ -135,7 +156,9 @@ data class Opcion(
     /** Emoji opcional bajo el texto. */
     val emoji: String? = null,
     /** Lo que dice el TTS si el niño toca la opción para escucharla. */
-    val audio: String = texto
+    val audio: String = texto,
+    /** Se dibuja con letra ligada en vez de con la de imprenta. */
+    val manuscrita: Boolean = false
 )
 
 /** Un ejercicio concreto ya listo para presentarse. */

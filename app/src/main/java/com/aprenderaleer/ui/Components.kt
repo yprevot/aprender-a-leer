@@ -69,7 +69,8 @@ fun TarjetaOpcion(
     habilitada: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tamanoTexto: Int = 56
+    tamanoTexto: Int = 56,
+    manuscrita: Boolean = false
 ) {
     val escala by animateFloatAsState(
         targetValue = when (estado) {
@@ -116,8 +117,11 @@ fun TarjetaOpcion(
             }
             Text(
                 text = texto,
+                fontFamily = if (manuscrita) Manuscrita else Imprenta,
                 fontSize = tamanoTexto.sp,
-                lineHeight = (tamanoTexto * 1.15f).sp,
+                // La ligada necesita más aire: sus trazos suben y bajan mucho
+                // más que los de la imprenta y si no se recortan.
+                lineHeight = (tamanoTexto * if (manuscrita) 1.4f else 1.15f).sp,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.displaySmall

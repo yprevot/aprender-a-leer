@@ -2,6 +2,7 @@ package com.aprenderaleer.engine
 
 import com.aprenderaleer.data.Curriculum
 import com.aprenderaleer.data.Ejercicio
+import com.aprenderaleer.data.FormaLetra
 import com.aprenderaleer.data.Leccion
 import com.aprenderaleer.data.Letra
 import com.aprenderaleer.data.Modulo
@@ -125,33 +126,42 @@ object ExerciseGenerator {
         val pool = Curriculum.vocales
 
         l.letrasEnsenadas.forEach { v ->
-            // Escuchar el sonido y tocar la vocal.
-            out += Ejercicio(
-                id = "voc_son_${v.id}",
-                tipo = TipoEjercicio.SONIDO_A_LETRA,
-                consigna = "¿Cuál vocal suena así?",
-                consignaHablada = "Escucha bien... ${v.sonidoSostenido}. Toca la vocal que suena ${v.sonidoSostenido}.",
-                opciones = opcionesLetra(v, pool, 4, rnd),
-                idCorrecto = v.id,
-                claveItem = "letra_${v.id}",
-                pista = "Vuelve a escuchar. La boca hace ${v.sonidoSostenido} ... es la ${v.mayuscula}."
-            )
-            // Escuchar el nombre y tocar la vocal (en vocales, nombre = sonido).
-            out += Ejercicio(
-                id = "voc_nom_${v.id}",
-                tipo = TipoEjercicio.NOMBRE_A_LETRA,
-                consigna = "Toca la vocal ${v.mayuscula}${v.minuscula}",
-                consignaHablada = "Toca la vocal ${v.nombreAlfabeto}.",
-                opciones = opcionesLetra(v, pool, 4, rnd),
-                idCorrecto = v.id,
-                claveItem = "letra_${v.id}",
-                pista = "Busca la que se ve así: ${v.mayuscula} ${v.minuscula}."
-            )
+            // Identificar la vocal en sus CUATRO presentaciones. Se alterna la
+            // consigna (sonido / nombre) para que cuatro preguntas seguidas
+            // sobre la misma vocal no se sientan la misma pregunta repetida.
+            FormaLetra.values().forEachIndexed { i, forma ->
+                val porSonido = i % 2 == 0
+                out += if (porSonido) {
+                    Ejercicio(
+                        id = "voc_son_${v.id}_${forma.name}",
+                        tipo = TipoEjercicio.SONIDO_A_LETRA,
+                        consigna = "¿Cuál ${forma.etiqueta} suena así?",
+                        consignaHablada = "Escucha bien... ${v.sonidoSostenido}. " +
+                            "Toca la ${forma.etiqueta} que suena ${v.sonidoSostenido}.",
+                        opciones = opcionesLetra(v, pool, 4, rnd, forma),
+                        idCorrecto = v.id,
+                        claveItem = "letra_${v.id}_${forma.name}",
+                        pista = "Vuelve a escuchar. La boca hace ${v.sonidoSostenido} " +
+                            "... es la ${v.nombreAlfabeto}."
+                    )
+                } else {
+                    Ejercicio(
+                        id = "voc_nom_${v.id}_${forma.name}",
+                        tipo = TipoEjercicio.NOMBRE_A_LETRA,
+                        consigna = "Toca la ${v.nombreAlfabeto} ${forma.etiqueta}",
+                        consignaHablada = "Toca la ${v.nombreAlfabeto} ${forma.etiqueta}.",
+                        opciones = opcionesLetra(v, pool, 4, rnd, forma),
+                        idCorrecto = v.id,
+                        claveItem = "letra_${v.id}_${forma.name}",
+                        pista = "Busca la que se ve así: ${forma.glifo(v)}."
+                    )
+                }
+            }
             // Palabra que empieza con esa vocal.
             out += Ejercicio(
                 id = "voc_pal_${v.id}",
                 tipo = TipoEjercicio.ESCUCHA_Y_TOCA,
-                consigna = "¿Cuál empieza con ${v.mayuscula}${v.minuscula}?",
+                consigna = "¿Cuál empieza con ${v.minuscula}?",
                 consignaHablada = "¿Cuál de estos empieza con el sonido ${v.sonidoSostenido}?",
                 opciones = opcionesPalabraEjemplo(v, pool, 3, rnd),
                 idCorrecto = v.id,
@@ -164,7 +174,7 @@ object ExerciseGenerator {
                     tipo = TipoEjercicio.MIRA_Y_DI,
                     consigna = "Di esta vocal en voz alta",
                     consignaHablada = "Ahora te toca a ti. Mira la letra y dila fuerte.",
-                    objetivoVisible = "${v.mayuscula}${v.minuscula}",
+                    objetivoVisible = v.minuscula,
                     respuestasAceptadas = listOf(v.nombreAlfabeto, v.minuscula) + v.variantesNombre,
                     claveItem = "voz_${v.id}",
                     pista = "Abre bien la boca y dilo fuerte: ${v.nombreAlfabeto}."
@@ -181,20 +191,9 @@ object ExerciseGenerator {
         val pool = Curriculum.alfabeto
 
         l.letrasEnsenadas.forEach { letra ->
-            // "Se llama eme" -> tocar la grafía. Este es el ejercicio clave que
-            // separa NOMBRE de SONIDO.
-            out += Ejercicio(
-                id = "alf_nom_${letra.id}",
-                tipo = TipoEjercicio.NOMBRE_A_LETRA,
-                consigna = "¿Cuál letra se llama «${letra.nombreAlfabeto}»?",
-                consignaHablada = "En el alfabeto hay una letra que se llama ${letra.nombreAlfabeto}. Tócala.",
-                opciones = opcionesLetra(letra, pool, 4, rnd),
-                idCorrecto = letra.id,
-                claveItem = "nombre_${letra.id}",
-                pista = "Se llama ${letra.nombreAlfabeto} y se escribe ${letra.mayuscula} ${letra.minuscula}."
-            )
-
-            // "Suena mmm" -> tocar la grafía.
+            // Identificar la letra en sus CUATRO presentaciones, alternando el
+            // ejercicio clave del método: NOMBRE ("se llama eme") y SONIDO
+            // ("suena mmm"), que son dos conocimientos distintos.
             val consignaSonido = if (letra.id == "h") {
                 "Hay una letra que no suena, es muda. ¿Cuál es?"
             } else if (letra.sonidoSostenido != null) {
@@ -202,17 +201,37 @@ object ExerciseGenerator {
             } else {
                 "Es la letra con la que empieza ${letra.palabraEjemplo}. Tócala."
             }
-            out += Ejercicio(
-                id = "alf_son_${letra.id}",
-                tipo = TipoEjercicio.SONIDO_A_LETRA,
-                consigna = if (letra.id == "h") "¿Cuál letra es muda?"
-                else "¿Cuál suena así, como en «${letra.palabraEjemplo}»?",
-                consignaHablada = consignaSonido,
-                opciones = opcionesLetra(letra, pool, 4, rnd),
-                idCorrecto = letra.id,
-                claveItem = "sonido_${letra.id}",
-                pista = "Piensa en ${letra.palabraEjemplo}. ${letra.emojiEjemplo} Empieza con esa letra."
-            )
+
+            FormaLetra.values().forEachIndexed { i, forma ->
+                val porNombre = i % 2 == 0
+                out += if (porNombre) {
+                    Ejercicio(
+                        id = "alf_nom_${letra.id}_${forma.name}",
+                        tipo = TipoEjercicio.NOMBRE_A_LETRA,
+                        consigna = "¿Cuál ${forma.etiqueta} se llama «${letra.nombreAlfabeto}»?",
+                        consignaHablada = "En el alfabeto hay una letra que se llama " +
+                            "${letra.nombreAlfabeto}. Toca la ${forma.etiqueta}.",
+                        opciones = opcionesLetra(letra, pool, 4, rnd, forma),
+                        idCorrecto = letra.id,
+                        claveItem = "nombre_${letra.id}_${forma.name}",
+                        pista = "Se llama ${letra.nombreAlfabeto} y se escribe " +
+                            "${forma.glifo(letra)}."
+                    )
+                } else {
+                    Ejercicio(
+                        id = "alf_son_${letra.id}_${forma.name}",
+                        tipo = TipoEjercicio.SONIDO_A_LETRA,
+                        consigna = if (letra.id == "h") "¿Cuál ${forma.etiqueta} es muda?"
+                        else "¿Cuál suena así, como en «${letra.palabraEjemplo}»?",
+                        consignaHablada = consignaSonido,
+                        opciones = opcionesLetra(letra, pool, 4, rnd, forma),
+                        idCorrecto = letra.id,
+                        claveItem = "sonido_${letra.id}_${forma.name}",
+                        pista = "Piensa en ${letra.palabraEjemplo}. ${letra.emojiEjemplo} " +
+                            "Empieza con esa letra."
+                    )
+                }
+            }
 
             if (voz) {
                 out += Ejercicio(
@@ -220,7 +239,7 @@ object ExerciseGenerator {
                     tipo = TipoEjercicio.MIRA_Y_DI,
                     consigna = "¿Cómo se llama esta letra en el alfabeto?",
                     consignaHablada = "Mira la letra y di cómo se llama en el alfabeto.",
-                    objetivoVisible = "${letra.mayuscula}${letra.minuscula}",
+                    objetivoVisible = letra.minuscula,
                     respuestasAceptadas = listOf(letra.nombreAlfabeto) + letra.variantesNombre,
                     claveItem = "voz_nombre_${letra.id}",
                     emoji = letra.emojiEjemplo,
@@ -368,11 +387,17 @@ object ExerciseGenerator {
 
     // ------------------------------------------------------------- utilidades
 
+    /**
+     * Opciones con la letra SOLA, no el par "Aa": se está presentando una
+     * letra en una presentación concreta, y mostrar las dos cajas juntas
+     * permitiría acertar reconociendo solo una de ellas.
+     */
     private fun opcionesLetra(
         correcta: Letra,
         pool: List<Letra>,
         cuantas: Int,
-        rnd: Random
+        rnd: Random,
+        forma: FormaLetra
     ): List<Opcion> {
         val confusas = (CONFUSIONES[correcta.id] ?: emptyList())
             .mapNotNull { id -> pool.firstOrNull { it.id == id } }
@@ -381,8 +406,9 @@ object ExerciseGenerator {
         return (distractores + correcta).shuffled(rnd).map {
             Opcion(
                 id = it.id,
-                texto = "${it.mayuscula}${it.minuscula}",
-                audio = it.nombreAlfabeto
+                texto = forma.glifo(it),
+                audio = it.nombreAlfabeto,
+                manuscrita = forma.esManuscrita
             )
         }
     }
