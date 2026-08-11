@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      IMPORTANTE: esta app NO declara NINGÚN permiso.
+      · El reconocimiento de voz se hace con RecognizerIntent (el diálogo del
+        sistema graba y transcribe; nuestro proceso nunca toca el micrófono),
+        por lo que NO se necesita android.permission.RECORD_AUDIO.
+      · No hay red, no hay almacenamiento externo, no hay cámara.
+      El bloque <queries> NO es un permiso: solo permite resolver los servicios
+      de voz del sistema en Android 11+ (package visibility).
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="false"
+        android:theme="@style/Theme.AprenderALeer">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="fullSensor"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode"
+            android:theme="@style/Theme.AprenderALeer">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

@@ -1,0 +1,21 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.jar.tmp
+verif.jar
+
+# Restos de haber apuntado "Gradle user home" a la carpeta del proyecto.
+# No deberían existir: el sitio correcto es ~/.gradle
+/caches/
+/daemon/
+/wrapper/
+/native/
+/.tmp/
