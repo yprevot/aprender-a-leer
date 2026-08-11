@@ -9,6 +9,7 @@ import com.aprenderaleer.data.Insignia
 import com.aprenderaleer.data.Insignias
 import com.aprenderaleer.data.Leccion
 import com.aprenderaleer.data.Modulo
+import com.aprenderaleer.data.PasoEnsenanza
 import com.aprenderaleer.data.ProgressStore
 import com.aprenderaleer.data.TipoEjercicio
 import com.aprenderaleer.engine.PronunciationMatcher
@@ -33,8 +34,11 @@ class LessonController(
     private val progreso: ProgressStore,
     private val voz: SpeechEngine
 ) {
+    /** Cada letra en dos pasos: primero la minúscula, después la mayúscula. */
+    val pasosEnsenanza: List<PasoEnsenanza> = leccion.pasosEnsenanza
+
     var fase by mutableStateOf(
-        if (leccion.letrasEnsenadas.isNotEmpty()) FaseLeccion.ENSENANZA else FaseLeccion.EJERCICIO
+        if (pasosEnsenanza.isNotEmpty()) FaseLeccion.ENSENANZA else FaseLeccion.EJERCICIO
     )
         private set
 
@@ -96,22 +100,48 @@ class LessonController(
 
     // ------------------------------------------------------------- enseñanza
 
+    /** El paso que se está enseñando ahora mismo. */
+    val pasoEnsenanza: PasoEnsenanza? get() = pasosEnsenanza.getOrNull(indiceEnsenanza)
+
+    /** Índice (1..n) de la letra actual, que ocupa dos pasos. */
+    val numeroLetraEnsenanza: Int get() = indiceEnsenanza / 2 + 1
+
+    val etiquetaSiguienteEnsenanza: String
+        get() {
+            val paso = pasoEnsenanza
+            return when {
+                indiceEnsenanza >= pasosEnsenanza.lastIndex -> "¡A jugar! 🎮"
+                paso != null && !paso.esMayuscula -> "Ahora la mayúscula ➡"
+                else -> "Siguiente letra ➡"
+            }
+        }
+
     fun narrarEnsenanza() {
-        val letra = leccion.letrasEnsenadas.getOrNull(indiceEnsenanza) ?: return
+        val paso = pasoEnsenanza ?: return
         mood = AvatarMood.HABLANDO
-        mensaje = "Mira bien la letra ${letra.mayuscula}${letra.minuscula}."
-        voz.decir(letra.guionEnsenanza(), lento = true) {
+        mensaje = "Mira bien la ${paso.nombreHablado}."
+        voz.decir(paso.guion(), lento = true) {
             mood = AvatarMood.FELIZ
-            letra.notaDidactica?.let { nota ->
-                mensaje = nota
-                voz.decir(nota, lento = true)
+            // La nota didáctica va con la minúscula, que es donde se explica
+            // la letra; repetirla en la mayúscula solo alarga la espera.
+            if (!paso.esMayuscula) {
+                paso.letra.notaDidactica?.let { nota ->
+                    mensaje = nota
+                    voz.decir(nota, lento = true)
+                }
             }
         }
     }
 
+    /** El niño toca el glifo para volver a oír cómo se llama. */
+    fun escucharPasoEnsenanza() {
+        val paso = pasoEnsenanza ?: return
+        voz.decir(paso.nombreHablado, lento = true)
+    }
+
     fun siguienteEnsenanza() {
         voz.callar()
-        if (indiceEnsenanza < leccion.letrasEnsenadas.lastIndex) {
+        if (indiceEnsenanza < pasosEnsenanza.lastIndex) {
             indiceEnsenanza++
             narrarEnsenanza()
         } else {

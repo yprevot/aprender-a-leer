@@ -234,22 +234,34 @@ private fun ContenidoLeccion(
 
 @Composable
 private fun BloqueEnsenanza(ctrl: LessonController, esGrande: Boolean) {
-    val letra = ctrl.leccion.letrasEnsenadas.getOrNull(ctrl.indiceEnsenanza) ?: return
+    val paso = ctrl.pasoEnsenanza ?: return
+    val letra = paso.letra
+    // Los dígrafos ocupan dos caracteres ("CH", "rr"): hay que bajar el
+    // cuerpo para que quepan las dos formas una al lado de la otra.
+    val tamanoGlifo = when {
+        paso.glifo.length > 1 -> if (esGrande) 62 else 44
+        esGrande -> 104
+        else -> 72
+    }
+
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        CartelObjetivo(
-            texto = "${letra.mayuscula} ${letra.minuscula}",
+        CartelLetra(
+            glifo = paso.glifo,
+            etiquetaCaja = "La ${letra.nombreAlfabeto} ${paso.etiquetaCaja}",
             emoji = letra.emojiEjemplo,
-            tamano = if (esGrande) 110 else 84,
+            onEscuchar = { ctrl.escucharPasoEnsenanza() },
+            tamano = tamanoGlifo,
             modifier = Modifier.fillMaxWidth(if (esGrande) 0.7f else 1f)
         )
         Spacer(Modifier.height(14.dp))
 
-        // Nombre vs sonido: la distinción que pide el método.
+        // Nombre vs sonido: la distinción que pide el método. El sonido solo
+        // se explica en la minúscula; la mayúscula ya es la misma letra.
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -261,23 +273,39 @@ private fun BloqueEnsenanza(ctrl: LessonController, esGrande: Boolean) {
                 modifier = Modifier.weight(1f)
             ) { ctrl.escucharOpcion("Se llama ${letra.nombreAlfabeto}") }
 
-            FichaDato(
-                titulo = "En la palabra suena",
-                valor = when {
-                    letra.id == "h" -> "no suena"
-                    letra.sonidoSostenido != null -> letra.sonidoSostenido
-                    else -> letra.silabas.firstOrNull() ?: letra.minuscula
-                },
-                color = Verde,
-                modifier = Modifier.weight(1f)
-            ) {
-                val s = if (letra.id == "h") "La hache es muda, no suena."
-                else letra.sonidoSostenido ?: letra.silabas.joinToString(", ")
-                ctrl.escucharOpcion(s)
+            if (!paso.esMayuscula) {
+                FichaDato(
+                    titulo = "En la palabra suena",
+                    valor = when {
+                        letra.id == "h" -> "no suena"
+                        letra.sonidoSostenido != null -> letra.sonidoSostenido
+                        else -> letra.silabas.firstOrNull() ?: letra.minuscula
+                    },
+                    color = Verde,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    val s = if (letra.id == "h") "La hache es muda, no suena."
+                    else letra.sonidoSostenido ?: letra.silabas.joinToString(", ")
+                    ctrl.escucharOpcion(s)
+                }
             }
         }
 
-        if (letra.silabas.isNotEmpty()) {
+        if (paso.esMayuscula) {
+            Spacer(Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0x14000000)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    "🔠 La mayúscula se usa al empezar una frase y en los nombres.",
+                    Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        if (!paso.esMayuscula && letra.silabas.isNotEmpty()) {
             Spacer(Modifier.height(14.dp))
             Text("Se combina así:", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
@@ -306,17 +334,19 @@ private fun BloqueEnsenanza(ctrl: LessonController, esGrande: Boolean) {
             }
         }
 
-        letra.notaDidactica?.let {
-            Spacer(Modifier.height(12.dp))
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0x14000000)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    "💡 $it",
-                    Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+        if (!paso.esMayuscula) {
+            letra.notaDidactica?.let {
+                Spacer(Modifier.height(12.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0x14000000)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        "💡 $it",
+                        Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
 
@@ -329,17 +359,13 @@ private fun BloqueEnsenanza(ctrl: LessonController, esGrande: Boolean) {
                 onClick = { ctrl.siguienteEnsenanza() },
                 colors = ButtonDefaults.buttonColors(containerColor = Verde)
             ) {
-                Text(
-                    if (ctrl.indiceEnsenanza < ctrl.leccion.letrasEnsenadas.lastIndex)
-                        "Siguiente letra ➡"
-                    else "¡A jugar! 🎮",
-                    fontSize = 18.sp
-                )
+                Text(ctrl.etiquetaSiguienteEnsenanza, fontSize = 18.sp)
             }
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            "Letra ${ctrl.indiceEnsenanza + 1} de ${ctrl.leccion.letrasEnsenadas.size}",
+            "Letra ${ctrl.numeroLetraEnsenanza} de ${ctrl.leccion.letrasEnsenadas.size}" +
+                " · ${paso.etiquetaCaja}",
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(Modifier.height(24.dp))

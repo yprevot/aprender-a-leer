@@ -77,4 +77,31 @@ class CurriculumTest {
         assertTrue(guion.contains("mmm"))
         assertTrue(guion.contains("ma, me, mi, mo, mu"))
     }
+
+    @Test
+    fun `cada letra se ensena en dos pasos y la minuscula va primero`() {
+        Curriculum.lecciones.forEach { lec ->
+            assertEquals(
+                "${lec.id}: pasos != 2 por letra",
+                lec.letrasEnsenadas.size * 2,
+                lec.pasosEnsenanza.size
+            )
+            lec.pasosEnsenanza.chunked(2).forEach { (min, may) ->
+                assertEquals(min.letra, may.letra)
+                assertTrue("${lec.id}: la mayúscula va antes", !min.esMayuscula && may.esMayuscula)
+                assertEquals(min.letra.minuscula, min.glifo)
+                assertEquals(may.letra.mayuscula, may.glifo)
+            }
+        }
+    }
+
+    @Test
+    fun `el guion de la mayuscula la nombra y la distingue de la minuscula`() {
+        val eme = Curriculum.letra("m")!!
+        val guion = eme.guionEnsenanza(esMayuscula = true)
+        assertTrue(guion.contains("eme mayúscula"))
+        assertTrue(guion.contains("misma letra"))
+        // La familia silábica se enseña con la minúscula, no se repite aquí.
+        assertTrue(!guion.contains("ma, me, mi, mo, mu"))
+    }
 }

@@ -38,12 +38,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aprenderaleer.ui.theme.Amarillo
 import com.aprenderaleer.ui.theme.Azul
+import com.aprenderaleer.ui.theme.Imprenta
+import com.aprenderaleer.ui.theme.Manuscrita
 import com.aprenderaleer.ui.theme.Rojo
 import com.aprenderaleer.ui.theme.RojoSuave
 import com.aprenderaleer.ui.theme.Verde
@@ -286,6 +290,92 @@ fun CartelObjetivo(
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.displayLarge
             )
+        }
+    }
+}
+
+/**
+ * Cartel de enseñanza de UNA letra en UNA caja (minúscula o mayúscula).
+ *
+ * Muestra el mismo glifo en las dos formas con las que el niño se lo va a
+ * encontrar —de imprenta y manuscrito— porque son visualmente muy distintas
+ * (la "a" de imprenta y la "a" ligada apenas se parecen) y hay que enseñar
+ * explícitamente que son la misma letra. Cada forma se toca para oírla.
+ */
+@Composable
+fun CartelLetra(
+    glifo: String,
+    etiquetaCaja: String,
+    emoji: String?,
+    onEscuchar: () -> Unit,
+    modifier: Modifier = Modifier,
+    tamano: Int = 84
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(4.dp, Amarillo),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (emoji != null) {
+                Text(emoji, fontSize = 44.sp)
+                Spacer(Modifier.height(4.dp))
+            }
+            Text(etiquetaCaja, style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(10.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                FormaLetra("De imprenta", glifo, Imprenta, tamano, Modifier.weight(1f), onEscuchar)
+                FormaLetra("A mano", glifo, Manuscrita, tamano, Modifier.weight(1f), onEscuchar)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FormaLetra(
+    etiqueta: String,
+    glifo: String,
+    familia: FontFamily,
+    tamano: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(22.dp),
+        color = Azul.copy(alpha = 0.07f),
+        border = BorderStroke(2.dp, Azul.copy(alpha = 0.35f))
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(etiqueta, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = glifo,
+                fontFamily = familia,
+                fontSize = tamano.sp,
+                // La cursiva tiene trazos que suben y bajan mucho: sin este
+                // aire de más, la ligadura se recorta por arriba o por abajo.
+                lineHeight = (tamano * 1.35f).sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+            Text("🔊", fontSize = 16.sp)
         }
     }
 }

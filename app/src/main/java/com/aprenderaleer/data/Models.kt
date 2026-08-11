@@ -37,10 +37,32 @@ data class Letra(
 ) {
     val glifo: String get() = "$mayuscula$minuscula"
 
-    /** Guion que el avatar narra al presentar la letra. */
-    fun guionEnsenanza(): String {
+    /** Guion completo (el de la minúscula, que es el que lleva la enseñanza). */
+    fun guionEnsenanza(): String = guionEnsenanza(esMayuscula = false)
+
+    /**
+     * Guion que el avatar narra al presentar la letra en UNA caja.
+     *
+     * La minúscula carga toda la enseñanza (nombre, sonido, familia silábica,
+     * ejemplo) porque es la forma que el niño ve casi siempre al leer. La
+     * mayúscula solo añade lo que la diferencia: es la misma letra, se llama
+     * igual y se usa al empezar frase y en los nombres.
+     *
+     * En ambos casos se nombra la letra con `nombreAlfabeto` y no con el
+     * carácter suelto: un TTS lee "eme" de forma fiable, pero una "m" aislada
+     * no, y el niño necesita oír bien lo que está mirando.
+     */
+    fun guionEnsenanza(esMayuscula: Boolean): String {
         val sb = StringBuilder()
-        sb.append("Esta es la letra $mayuscula, $minuscula. ")
+        if (esMayuscula) {
+            sb.append("Esta es la $nombreAlfabeto mayúscula. ")
+            sb.append("Es la misma letra que la $nombreAlfabeto minúscula, ")
+            sb.append("solo que se escribe más grande. ")
+            sb.append("La mayúscula se usa al empezar una frase y en los nombres. ")
+            sb.append("Mírala en las dos formas: la de imprenta y la de escribir a mano.")
+            return sb.toString()
+        }
+        sb.append("Esta es la $nombreAlfabeto minúscula. ")
         sb.append("En el alfabeto se llama $nombreAlfabeto. ")
         if (esVocal) {
             sb.append("Y dentro de una palabra también suena $nombreAlfabeto. ")
@@ -56,6 +78,26 @@ data class Letra(
         sb.append("Por ejemplo: $palabraEjemplo.")
         return sb.toString()
     }
+}
+
+/**
+ * Un paso de la fase de enseñanza: una letra en UNA caja.
+ *
+ * Cada letra se enseña en dos pasos —primero la minúscula, después la
+ * mayúscula— y cada paso muestra el mismo glifo en las dos formas con las
+ * que el niño se lo va a encontrar: de imprenta (libros y pantallas) y
+ * manuscrito (su cuaderno).
+ */
+data class PasoEnsenanza(val letra: Letra, val esMayuscula: Boolean) {
+    /** Lo que se dibuja en grande: "a" o "A". */
+    val glifo: String get() = if (esMayuscula) letra.mayuscula else letra.minuscula
+
+    val etiquetaCaja: String get() = if (esMayuscula) "mayúscula" else "minúscula"
+
+    /** Cómo se nombra en voz alta. Ej: "eme minúscula". */
+    val nombreHablado: String get() = "${letra.nombreAlfabeto} $etiquetaCaja"
+
+    fun guion(): String = letra.guionEnsenanza(esMayuscula)
 }
 
 /** Una palabra objetivo, ya separada en sílabas. */
@@ -129,7 +171,20 @@ data class Leccion(
     /** Letras que se presentan antes de los ejercicios (fase de enseñanza). */
     val letrasEnsenadas: List<Letra> = emptyList(),
     val palabras: List<Palabra> = emptyList()
-)
+) {
+    /**
+     * La fase de enseñanza recorre dos pasos por letra: minúscula y luego
+     * mayúscula. Los ejercicios siguen generándose desde `letrasEnsenadas`,
+     * así que partir la enseñanza no cambia la lección en sí.
+     */
+    val pasosEnsenanza: List<PasoEnsenanza>
+        get() = letrasEnsenadas.flatMap {
+            listOf(
+                PasoEnsenanza(it, esMayuscula = false),
+                PasoEnsenanza(it, esMayuscula = true)
+            )
+        }
+}
 
 /** Los grandes bloques del juego, en orden. */
 enum class Modulo(val titulo: String, val descripcion: String, val emoji: String) {
