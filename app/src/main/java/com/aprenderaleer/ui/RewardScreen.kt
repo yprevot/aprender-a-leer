@@ -10,6 +10,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aprenderaleer.data.Insignia
@@ -55,7 +58,8 @@ fun PantallaRecompensa(
     onSiguiente: () -> Unit,
     onMapa: () -> Unit
 ) {
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val esGrande = maxWidth >= 700.dp
         LluviaConfeti()
 
         Column(
@@ -66,7 +70,11 @@ fun PantallaRecompensa(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            AvatarLalo(AvatarMood.CELEBRANDO, tamano = 180.dp)
+            Column(
+                Modifier.widthIn(max = if (esGrande) 480.dp else Dp.Unspecified),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            AvatarLalo(AvatarMood.CELEBRANDO, tamano = if (esGrande) 220.dp else 180.dp)
             Spacer(Modifier.height(10.dp))
             Text(
                 if (perfecta) "¡Perfecto!" else "¡Lo lograste!",
@@ -139,6 +147,7 @@ fun PantallaRecompensa(
             }
             OutlinedButton(onClick = onMapa, modifier = Modifier.fillMaxWidth(0.8f)) {
                 Text("🗺️ Volver al mapa", fontSize = 18.sp, modifier = Modifier.padding(4.dp))
+            }
             }
         }
     }
