@@ -4,6 +4,7 @@ import com.aprenderaleer.data.Curriculum
 import com.aprenderaleer.data.TipoEjercicio
 import com.aprenderaleer.engine.ExerciseGenerator
 import com.aprenderaleer.engine.PronunciationMatcher
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -85,6 +86,40 @@ class ExerciseGeneratorTest {
     @Test
     fun `sin voz no se generan ejercicios de hablar`() {
         assertTrue(todos(false).none { it.second.tipo == TipoEjercicio.MIRA_Y_DI })
+    }
+
+    @Test
+    fun `identificar una letra nunca muestra el par de cajas juntas`() {
+        todos(true).forEach { (lecId, e) ->
+            if (e.tipo == TipoEjercicio.NOMBRE_A_LETRA || e.tipo == TipoEjercicio.SONIDO_A_LETRA) {
+                e.opciones.forEach { op ->
+                    // "Aa" no es ni todo minúsculas ni todo mayúsculas: si la
+                    // opción trae las dos cajas, el niño acierta reconociendo
+                    // solo una de ellas.
+                    assertTrue(
+                        "$lecId/${e.id}: la opción '${op.texto}' no es una letra sola",
+                        op.texto == op.texto.lowercase() || op.texto == op.texto.uppercase()
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `una vocal se identifica en sus cuatro presentaciones`() {
+        val lec = Curriculum.leccion("voc_a")!!
+        val ejs = ExerciseGenerator.generar(lec, { 3 }, incluirVoz = true, rnd = Random(7))
+        val identificar = ejs.filter {
+            it.tipo == TipoEjercicio.NOMBRE_A_LETRA || it.tipo == TipoEjercicio.SONIDO_A_LETRA
+        }
+        val presentaciones = identificar.map { e ->
+            val correcta = e.opciones.first { it.id == e.idCorrecto }
+            correcta.texto to correcta.manuscrita
+        }
+        assertEquals(
+            setOf("a" to false, "A" to false, "a" to true, "A" to true),
+            presentaciones.toSet()
+        )
     }
 
     @Test

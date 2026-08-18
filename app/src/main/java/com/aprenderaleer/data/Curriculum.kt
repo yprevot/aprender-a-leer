@@ -17,31 +17,31 @@ object Curriculum {
     val vocales: List<Letra> = listOf(
         Letra(
             id = "a", mayuscula = "A", minuscula = "a", nombreAlfabeto = "a",
-            sonidoSostenido = "aaa", esVocal = true,
+            sonidoSostenido = "a", esVocal = true,
             palabraEjemplo = "araña", emojiEjemplo = "🕷️",
             variantesNombre = listOf("a", "ha", "ah")
         ),
         Letra(
             id = "e", mayuscula = "E", minuscula = "e", nombreAlfabeto = "e",
-            sonidoSostenido = "eee", esVocal = true,
+            sonidoSostenido = "e", esVocal = true,
             palabraEjemplo = "elefante", emojiEjemplo = "🐘",
             variantesNombre = listOf("e", "he", "eh")
         ),
         Letra(
             id = "i", mayuscula = "I", minuscula = "i", nombreAlfabeto = "i",
-            sonidoSostenido = "iii", esVocal = true,
+            sonidoSostenido = "i", esVocal = true,
             palabraEjemplo = "isla", emojiEjemplo = "🏝️",
             variantesNombre = listOf("i", "y", "hi", "ih")
         ),
         Letra(
             id = "o", mayuscula = "O", minuscula = "o", nombreAlfabeto = "o",
-            sonidoSostenido = "ooo", esVocal = true,
+            sonidoSostenido = "o", esVocal = true,
             palabraEjemplo = "oso", emojiEjemplo = "🐻",
             variantesNombre = listOf("o", "ho", "oh")
         ),
         Letra(
             id = "u", mayuscula = "U", minuscula = "u", nombreAlfabeto = "u",
-            sonidoSostenido = "uuu", esVocal = true,
+            sonidoSostenido = "u", esVocal = true,
             palabraEjemplo = "uva", emojiEjemplo = "🍇",
             variantesNombre = listOf("u", "hu", "uh")
         )

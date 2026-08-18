@@ -6,6 +6,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
@@ -23,6 +24,19 @@ val Amarillo = Color(0xFFFFC300)
 val Crema = Color(0xFFFFF8ED)
 val Tinta = Color(0xFF2B2118)
 val Morado = Color(0xFF7B5EA7)
+
+/**
+ * Letra ligada (manuscrita), la que el niño escribe en el cuaderno.
+ *
+ * Usa la familia "cursive" del sistema —DancingScript en Android— en vez de
+ * empaquetar un .ttf: no engorda el APK, cubre el alfabeto español entero
+ * (ñ incluida) y, si un dispositivo no la trae, cae en la fuente normal, con
+ * lo que el niño sigue viendo la letra correcta aunque no ligada.
+ */
+val Manuscrita: FontFamily = FontFamily.Cursive
+
+/** De imprenta: la de los libros y las pantallas. */
+val Imprenta: FontFamily = FontFamily.Default
 
 private val Esquema = lightColorScheme(
     primary = Naranja,

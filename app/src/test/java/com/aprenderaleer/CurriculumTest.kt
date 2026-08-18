@@ -75,6 +75,51 @@ class CurriculumTest {
         val guion = eme.guionEnsenanza()
         assertTrue(guion.contains("se llama eme"))
         assertTrue(guion.contains("mmm"))
-        assertTrue(guion.contains("ma, me, mi, mo, mu"))
+        eme.silabas.forEach { assertTrue("falta $it", guion.contains(it)) }
+    }
+
+    @Test
+    fun `el sonido se presenta suelto, repetido y avisando de la repeticion`() {
+        val partes = Curriculum.letra("m")!!.partesEnsenanza(esMayuscula = false)
+        // El fonema va en su propia parte, no enterrado en una frase: así se
+        // dice con pausa antes y después.
+        assertEquals(2, partes.count { it == "mmm" })
+        val primera = partes.indexOf("mmm")
+        assertTrue("no avisa de la repetición", partes[primera + 1].contains("otra vez"))
+        assertEquals("mmm", partes[primera + 2])
+    }
+
+    @Test
+    fun `las vocales suenan cortas, no alargadas`() {
+        Curriculum.vocales.forEach {
+            assertEquals("la ${it.id} se alarga", it.minuscula, it.sonidoSostenido)
+        }
+    }
+
+    @Test
+    fun `cada letra se ensena en dos pasos y la minuscula va primero`() {
+        Curriculum.lecciones.forEach { lec ->
+            assertEquals(
+                "${lec.id}: pasos != 2 por letra",
+                lec.letrasEnsenadas.size * 2,
+                lec.pasosEnsenanza.size
+            )
+            lec.pasosEnsenanza.chunked(2).forEach { (min, may) ->
+                assertEquals(min.letra, may.letra)
+                assertTrue("${lec.id}: la mayúscula va antes", !min.esMayuscula && may.esMayuscula)
+                assertEquals(min.letra.minuscula, min.glifo)
+                assertEquals(may.letra.mayuscula, may.glifo)
+            }
+        }
+    }
+
+    @Test
+    fun `el guion de la mayuscula la nombra y la distingue de la minuscula`() {
+        val eme = Curriculum.letra("m")!!
+        val guion = eme.guionEnsenanza(esMayuscula = true)
+        assertTrue(guion.contains("eme mayúscula"))
+        assertTrue(guion.contains("misma letra"))
+        // La familia silábica se enseña con la minúscula, no se repite aquí.
+        assertTrue(!guion.contains("ma, me, mi, mo, mu"))
     }
 }
