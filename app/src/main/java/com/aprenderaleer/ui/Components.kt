@@ -24,7 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -147,7 +147,7 @@ fun BotonEscuchar(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    Icons.Filled.VolumeUp,
+                    Icons.AutoMirrored.Filled.VolumeUp,
                     contentDescription = etiqueta,
                     tint = Color.White,
                     modifier = Modifier.size(tamano * 0.5f)

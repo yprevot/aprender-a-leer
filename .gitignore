@@ -19,3 +19,12 @@ verif.jar
 /wrapper/
 /native/
 /.tmp/
+
+# Firma de subida a Google Play: NUNCA en el repositorio.
+keystore.properties
+keystore/
+*.jks
+*.keystore
+
+# Artefactos generados para distribuir (APK/AAB/mapping).
+/dist/

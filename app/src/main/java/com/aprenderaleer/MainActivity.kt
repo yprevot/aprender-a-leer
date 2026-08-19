@@ -3,8 +3,12 @@ package com.aprenderaleer
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -14,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import com.aprenderaleer.data.Curriculum
 import com.aprenderaleer.data.Insignia
 import com.aprenderaleer.data.ProgressStore
@@ -22,6 +27,7 @@ import com.aprenderaleer.ui.PantallaInicio
 import com.aprenderaleer.ui.PantallaLeccion
 import com.aprenderaleer.ui.PantallaRecompensa
 import com.aprenderaleer.ui.theme.AprenderALeerTheme
+import com.aprenderaleer.ui.theme.Crema
 
 /**
  * Actividad única. Sin permisos, sin red.
@@ -29,12 +35,19 @@ import com.aprenderaleer.ui.theme.AprenderALeerTheme
  * · El TTS vive aquí para no reiniciarse al cambiar de pantalla.
  * · configChanges en el manifiesto evita recrear la Activity al girar el
  *   dispositivo, así el niño no pierde el ejercicio a medias.
+ * · Desde targetSdk 35 el sistema dibuja SIEMPRE de borde a borde y ya no se
+ *   puede renunciar a ello: se declara explícitamente con enableEdgeToEdge()
+ *   —barras transparentes con iconos oscuros, que es lo que pide un tema
+ *   claro— y el contenido se separa de barras y recortes con
+ *   safeDrawingPadding().
  */
 class MainActivity : ComponentActivity() {
 
     private lateinit var voz: SpeechEngine
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val barras = SystemBarStyle.light(Crema.toArgb(), Crema.toArgb())
+        enableEdgeToEdge(statusBarStyle = barras, navigationBarStyle = barras)
         super.onCreate(savedInstanceState)
         // La pantalla no se apaga mientras el niño escucha una explicación.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -44,11 +57,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AprenderALeerTheme {
+                // El Surface pinta TODA la ventana (también detrás de las
+                // barras y del recorte de la cámara, que en apaisado deja una
+                // franja lateral); el contenido se aparta con
+                // safeDrawingPadding dentro.
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppRaiz(progreso, voz)
+                    Box(Modifier.safeDrawingPadding()) {
+                        AppRaiz(progreso, voz)
+                    }
                 }
             }
         }

@@ -113,11 +113,13 @@ class SpeechEngine(context: Context) {
     }
 
     private fun aplicarIdioma() {
+        // forLanguageTag en lugar de Locale("es","ES"): el constructor está
+        // obsoleto desde Java 19 (y el JDK de Android Studio ya lo avisa).
         val candidatos = listOf(
-            Locale("es", "US"),
-            Locale("es", "ES"),
-            Locale("es", "MX"),
-            Locale("es")
+            Locale.forLanguageTag("es-US"),
+            Locale.forLanguageTag("es-ES"),
+            Locale.forLanguageTag("es-MX"),
+            Locale.forLanguageTag("es")
         )
         for (loc in candidatos) {
             val r = tts?.setLanguage(loc) ?: TextToSpeech.LANG_NOT_SUPPORTED

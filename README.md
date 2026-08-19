@@ -111,6 +111,8 @@ Un solo layout adaptativo con `BoxWithConstraints` (sin dependencias extra):
 - Rejilla de opciones con `GridCells.Adaptive` (150 dp en móvil, 200 dp en tablet): reflúye sola.
 - Objetivos táctiles **enormes** (≥ 96 dp): a los 5 años la motricidad fina falla y un botón pequeño produce errores que no son de lectura.
 - Tema siempre claro y de alto contraste, tipografía muy grande, `configChanges` en el manifiesto para que girar el dispositivo no pierda el ejercicio a medias, y la pantalla no se apaga durante una explicación.
+- **De borde a borde.** Desde `targetSdk 35` Android dibuja siempre bajo las barras de estado y navegación y ya no se puede renunciar a ello, así que la app lo declara (`enableEdgeToEdge()` con barras transparentes e iconos oscuros) y aparta el contenido con `safeDrawingPadding()`. El fondo crema se pinta en toda la ventana —también bajo las barras y en la franja del recorte de cámara en apaisado— y también como `windowBackground`, para que no haya destello blanco al abrir.
+- Sin `screenOrientation` fijo: Android 16 ignora esa restricción en la mayoría de dispositivos, y el layout ya es adaptativo.
 
 ---
 
@@ -140,26 +142,62 @@ Leer/
 │   │       ├── HomeScreen.kt          ← mapa, medallas, ajustes
 │   │       ├── RewardScreen.kt        ← celebración final
 │   │       └── theme/Theme.kt
-│   └── res/                           ← icono, tema, strings
-├── app/src/test/                      ← tests JVM (3 clases)
+│   └── res/                           ← icono (con capa monocroma), tema, strings
+├── app/src/test/                      ← tests JVM (3 clases, 31 casos)
+├── gradle/libs.versions.toml          ← catálogo: único sitio con las versiones
+├── keystore.properties                ← credenciales de firma (NO va a git)
+├── dist/                              ← APK y AAB generados (NO va a git)
 └── tools/Verificacion.kt              ← verificación sin Android SDK
 ```
 
 ---
 
-## 7. Cómo compilar y ejecutar
+## 7. Cómo compilar, verificar y publicar
 
-Necesitas **Android Studio** (Ladybug o posterior) y **JDK 17**.
+### Requisitos
 
-1. Abre la carpeta `Leer` en Android Studio.
-2. Android Studio genera el *Gradle wrapper* y descarga las dependencias al sincronizar. Si prefieres la terminal y ya tienes Gradle 8.7+:
-   ```bash
-   gradle wrapper --gradle-version 8.7
-   ./gradlew assembleDebug
-   ```
-3. Ejecuta en un dispositivo o emulador con **Android 7.0 (API 24) o superior**.
+| Herramienta | Versión | Nota |
+|---|---|---|
+| JDK | 17 o superior | vale el que trae Android Studio (`Contents/jbr`) |
+| Gradle | 9.7 | lo baja solo el *wrapper* (`./gradlew`), ya incluido en el repo |
+| Android Gradle Plugin | 9.3.1 | |
+| Kotlin | 2.4.10 | |
+| Compose BOM | 2026.08.00 | |
+| SDK de compilación | `compileSdk 37`, `targetSdk 36`, `minSdk 24` | AGP descarga la plataforma que falte |
 
-Para que la voz funcione bien en un emulador, instala el motor de TTS en español y Google App (en un teléfono real suele venir todo listo).
+Las versiones están en un único sitio: `gradle/libs.versions.toml`.
+
+### Compilar
+
+```bash
+./gradlew assembleDebug      # APK de pruebas (applicationId .debug: convive con la instalada)
+./gradlew assembleRelease    # APK firmado y optimizado con R8 (~1 MB)
+./gradlew bundleRelease      # AAB para Google Play
+```
+
+Los artefactos quedan en `app/build/outputs/` (y se copian a mano a `dist/` para distribuir).
+
+### Firma
+
+`app/build.gradle.kts` lee `keystore.properties` de la raíz:
+
+```properties
+storeFile=keystore/upload-keystore.jks
+storePassword=…
+keyAlias=upload
+keyPassword=…
+```
+
+Si ese fichero no existe, el *release* se firma con la clave de depuración y **sigue compilando**: el repositorio se puede clonar y compilar sin secretos. Ni el `.jks` ni el `.properties` entran en git.
+
+Para crear una clave de subida nueva:
+
+```bash
+keytool -genkeypair -v -keystore keystore/upload-keystore.jks -storetype PKCS12 \
+        -alias upload -keyalg RSA -keysize 4096 -validity 10000
+```
+
+> Guarda copia del `.jks` y de su contraseña. Sin ellos no se pueden firmar actualizaciones para la misma ficha de Play (aunque con *Play App Signing* activo, Google puede restablecer la clave de subida).
 
 ### Cómo verificar
 
@@ -168,6 +206,11 @@ Para que la voz funcione bien en un emulador, instala el motor de TTS en españo
 ./gradlew test
 ```
 Comprueban el alfabeto y su orden, que cada consonante tenga familia silábica, que la división en sílabas reconstruya la palabra, que ningún ejercicio generado sea irresoluble y ~25 casos de reconocimiento de voz.
+
+**Lint** (se ejecuta solo en cada `assembleRelease`, y aborta el build si encuentra un error):
+```bash
+./gradlew lintRelease     # informe en app/build/reports/lint-results-release.html
+```
 
 **Verificación completa sin Android SDK** (`tools/Verificacion.kt`), que recorre las 53 lecciones con 40 semillas aleatorias distintas:
 ```bash
@@ -182,11 +225,31 @@ java -jar verif.jar
 
 > Esta verificación ya detectó y se corrigieron tres fallos reales durante el desarrollo: una palabra de ejemplo que no empezaba por su letra (`ñ`), una respuesta hablada imposible de validar (`h`), y un `sortedByDescending` con aleatoriedad dentro del comparador que hacía **crashear la app** con `Comparison method violates its general contract!`.
 
+**En dispositivo o emulador** (Android 7.0 / API 24 o superior):
+```bash
+./gradlew installRelease
+adb shell am start -n com.aprenderaleer/.MainActivity
+```
+
+Para que la voz funcione bien en un emulador, instala el motor de TTS en español y Google App (en un teléfono real suele venir todo listo).
+
+### Publicar en Google Play
+
+Paso a paso en [docs/PUBLICAR-EN-PLAY.md](docs/PUBLICAR-EN-PLAY.md).
+
 ---
 
 ## 8. Privacidad
 
 Sin permisos, sin internet, sin analítica, sin cuentas. El progreso se guarda solo en `SharedPreferences` del dispositivo. El único momento en que sale audio del proceso es cuando el **sistema operativo** abre su diálogo de reconocimiento de voz, que el usuario ve en pantalla.
+
+Comprobable sobre el APK ya construido:
+
+```bash
+aapt2 dump permissions dist/AprenderALeer-1.0-release.apk
+```
+
+Devuelve un único permiso, `com.aprenderaleer.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`: lo declara y lo usa la propia app, lo añade `androidx.core` para que sus `BroadcastReceiver` internos no queden expuestos, es de nivel *signature* y **no se le muestra al usuario**. Ni `INTERNET`, ni `RECORD_AUDIO`, ni almacenamiento: sin permiso de red, la app no puede conectarse aunque quisiera.
 
 ---
 

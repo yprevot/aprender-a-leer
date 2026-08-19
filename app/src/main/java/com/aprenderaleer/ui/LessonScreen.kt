@@ -25,8 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -182,7 +182,7 @@ private fun BarraSuperior(ctrl: LessonController, onSalir: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onSalir) {
-            Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
         }
         Column(Modifier.weight(1f)) {
             Text(
@@ -566,7 +566,7 @@ private fun BloqueArmaPalabra(ctrl: LessonController, ej: Ejercicio, esGrande: B
                 }
             }
             IconButton(onClick = { ctrl.borrarUltimaSilaba() }) {
-                Icon(Icons.Filled.Backspace, contentDescription = "Borrar")
+                Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = "Borrar")
             }
         }
 

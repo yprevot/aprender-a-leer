@@ -2,6 +2,7 @@ package com.aprenderaleer.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 /**
  * Progreso del niño. SharedPreferences: local, sin red, sin permisos.
@@ -20,7 +21,7 @@ class ProgressStore(context: Context) {
 
     var estrellas: Int
         get() = prefs.getInt(K_ESTRELLAS, 0)
-        set(v) = prefs.edit().putInt(K_ESTRELLAS, v).apply()
+        set(v) = prefs.edit { putInt(K_ESTRELLAS, v) }
 
     fun sumarEstrellas(n: Int) {
         estrellas += n
@@ -28,16 +29,16 @@ class ProgressStore(context: Context) {
 
     var mejorRacha: Int
         get() = prefs.getInt(K_MEJOR_RACHA, 0)
-        set(v) = prefs.edit().putInt(K_MEJOR_RACHA, v).apply()
+        set(v) = prefs.edit { putInt(K_MEJOR_RACHA, v) }
 
     var nombreNino: String
         get() = prefs.getString(K_NOMBRE, "") ?: ""
-        set(v) = prefs.edit().putString(K_NOMBRE, v).apply()
+        set(v) = prefs.edit { putString(K_NOMBRE, v) }
 
     /** El adulto puede desactivar los ejercicios de hablar (p. ej. en el bus). */
     var vozActivada: Boolean
         get() = prefs.getBoolean(K_VOZ, true)
-        set(v) = prefs.edit().putBoolean(K_VOZ, v).apply()
+        set(v) = prefs.edit { putBoolean(K_VOZ, v) }
 
     // ------------------------------------------------------------- lecciones
 
@@ -49,10 +50,10 @@ class ProgressStore(context: Context) {
     fun completarLeccion(idLeccion: String, estrellas: Int) {
         val set = leccionesCompletadas().toMutableSet()
         set += idLeccion
-        prefs.edit().putStringSet(K_LECCIONES, set).apply()
+        prefs.edit { putStringSet(K_LECCIONES, set) }
         val previas = estrellasDeLeccion(idLeccion)
         if (estrellas > previas) {
-            prefs.edit().putInt("$K_ESTRELLAS_LECCION$idLeccion", estrellas).apply()
+            prefs.edit { putInt("$K_ESTRELLAS_LECCION$idLeccion", estrellas) }
         }
     }
 
@@ -79,13 +80,13 @@ class ProgressStore(context: Context) {
     fun registrarRespuesta(claveItem: String, acierto: Boolean) {
         val actual = caja(claveItem)
         val nueva = if (acierto) minOf(actual + 1, CAJA_MAX) else 0
-        prefs.edit().putInt("$K_CAJA$claveItem", nueva).apply()
+        prefs.edit { putInt("$K_CAJA$claveItem", nueva) }
         val kAciertos = "$K_ACIERTOS$claveItem"
         val kFallos = "$K_FALLOS$claveItem"
         if (acierto) {
-            prefs.edit().putInt(kAciertos, prefs.getInt(kAciertos, 0) + 1).apply()
+            prefs.edit { putInt(kAciertos, prefs.getInt(kAciertos, 0) + 1) }
         } else {
-            prefs.edit().putInt(kFallos, prefs.getInt(kFallos, 0) + 1).apply()
+            prefs.edit { putInt(kFallos, prefs.getInt(kFallos, 0) + 1) }
         }
     }
 
@@ -116,12 +117,12 @@ class ProgressStore(context: Context) {
         val set = insignias().toMutableSet()
         if (id in set) return false
         set += id
-        prefs.edit().putStringSet(K_INSIGNIAS, set).apply()
+        prefs.edit { putStringSet(K_INSIGNIAS, set) }
         return true
     }
 
     fun reiniciarTodo() {
-        prefs.edit().clear().apply()
+        prefs.edit { clear() }
     }
 
     companion object {

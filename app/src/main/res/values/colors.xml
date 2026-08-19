@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mismo crema que el tema de Compose (Theme.kt): evita el destello
+         blanco al abrir la app y pinta el fondo de la ventana bajo las
+         barras del sistema. -->
+    <color name="crema">#FFF8ED</color>
+</resources>
